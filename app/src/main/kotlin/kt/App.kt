@@ -57,17 +57,40 @@ fun Application.module(testing: Boolean = false) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
 
-            var user: User
+            val user = getUser(query["login"]!!, query["password"]!!)
+            if (user.empty()) return@post call.respond(HttpStatusCode.NotFound)
+            call.respond(HttpStatusCode.Accepted)
+        }
 
-            transaction {
-                user = User.find {Users.login eq query["login"]!! and (Users.password eq query["password"]!!) }.first()
+        post("/register") {
+            val requiredKeys = listOf("login", "password")
+            val query = call.receive<HashMap<String, String>>()
+
+            if (!query.keys.containsAll(requiredKeys)) {
+                return@post call.respond(HttpStatusCode.BadRequest)
             }
 
-            println(user)
-
-
-
-            call.respond("2")
+            val user = getUserReg(query["login"]!!)
+            println(user.empty())
+//            if (user.empty()) return@post call.respond(HttpStatusCode.Conflict)
+            call.respond(HttpStatusCode.Accepted)
+//            User.new {
+//                login = query["login"]!!
+//                password = query["password"]!!
+//            }
+//            call.respond(HttpStatusCode.Accepted)
         }
+    }
+}
+
+fun getUser(login: String, password: String): SizedIterable<User> {
+    return transaction {
+        return@transaction User.find { Users.login eq login and (Users.password eq password) }
+    }
+}
+
+fun getUserReg(login: String): SizedIterable<User> {
+    return transaction {
+        return@transaction User.find { Users.login eq login }
     }
 }
