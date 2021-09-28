@@ -11,13 +11,13 @@ import io.ktor.auth.*
 import io.ktor.auth.jwt.*
 import io.ktor.http.*
 import io.ktor.request.*
+import io.ktor.server.netty.*
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.FileInputStream
@@ -42,46 +42,32 @@ fun main(args: Array<String>) {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     Database.connect("jdbc:sqlite:app/src/main/resources/data.db", "org.sqlite.JDBC")
 
-    transaction {
-        SchemaUtils.create(Users)
-
-        User.new {
-            login = "admin"
-            password = "admin"
-        }
-
-
-        for (user in User.all()) {
-            println(user.login)
-        }
-
-    }
+    EngineMain.main(args)
 }
 
-//fun Application.module(testing: Boolean = false) {
-//    install(ContentNegotiation) { gson() }
-//    install(Authentication) { jwt {} }
-//
-////    var db = initFirebase()
-//
-//    routing {
-//        post("/login") {
-//            val requiredKeys = listOf("login", "password")
-//            val query = call.receive<HashMap<String, Any>>()
-//
-//            if (!query.keys.containsAll(requiredKeys)) {
-//                call.respond(HttpStatusCode.BadRequest)
-//            }
+fun Application.module(testing: Boolean = false) {
+    install(ContentNegotiation) { gson() }
 
-////            if (user == null) call.respond(HttpStatusCode.NotFound)
-////            val token = JWT.create()
-////                .withClaim("username", user?.get(0)?.login)
-////                .withExpiresAt(Date(System.currentTimeMillis() + 60000))
-////                .sign(Algorithm.HMAC256("secret"))
-////
-////            println(token)
-//
-//            call.respond("2")
-//        }
-//    }
-//}
+    routing {
+        post("/login") {
+            val requiredKeys = listOf("login", "password")
+            val query = call.receive<HashMap<String, String>>()
+
+            if (!query.keys.containsAll(requiredKeys)) {
+                return@post call.respond(HttpStatusCode.BadRequest)
+            }
+
+            var user: User
+
+            transaction {
+                user = User.find {Users.login eq query["login"]!! and (Users.password eq query["password"]!!) }.first()
+            }
+
+            println(user)
+
+
+
+            call.respond("2")
+        }
+    }
+}
