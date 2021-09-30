@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.5.30" // для поддержки котлина
-    application // плагин добавляющий возможность создания консольных приложений
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 repositories {
@@ -28,7 +28,10 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.30.1")
 }
-
-application {
-    mainClass.set("kt.AppKt") // главный класс приложения
+tasks{
+    shadowJar {
+        manifest {
+            attributes(Pair("Main-Class", "kt.AppKt"))
+        }
+    }
 }
