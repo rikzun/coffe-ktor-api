@@ -57,8 +57,9 @@ fun Application.module(testing: Boolean = false) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
 
-            val user = getUser(query["login"]!!, query["password"]!!)
-            if (user.empty()) return@post call.respond(HttpStatusCode.NotFound)
+            if (!hasUser(query["login"]!!, query["password"]!!)) {
+                return@post call.respond(HttpStatusCode.NotFound)
+            }
             call.respond(HttpStatusCode.Accepted)
         }
 
@@ -73,23 +74,26 @@ fun Application.module(testing: Boolean = false) {
             if (hasUser(query["login"]!!)) {
                 return@post call.respond(HttpStatusCode.Conflict)
             }
-            User.new {
-                login = query["login"]!!
-                password = query["password"]!!
+
+            transaction {
+                User.new {
+                    login = query["login"]!!
+                    password = query["password"]!!
+                }
             }
             call.respond(HttpStatusCode.Accepted)
         }
     }
 }
 
-fun getUser(login: String, password: String): SizedIterable<User> {
+fun hasUser(login: String, password: String): Boolean {
     return transaction {
-        return@transaction User.find { Users.login eq login and (Users.password eq password) }
+        return@transaction !User.find { Users.login eq login and (Users.password eq password) }.empty()
     }
 }
 
 fun hasUser(login: String): Boolean {
     return transaction {
-        return@transaction User.find { Users.login eq login }.empty()
+        return@transaction !User.find { Users.login eq login }.empty()
     }
 }
