@@ -47,20 +47,37 @@ fun main(args: Array<String>) {
 
 fun Application.module(testing: Boolean = false) {
     install(ContentNegotiation) { gson() }
+    install(Authentication) {
+        jwt("auth-jwt") {
+            realm = "http://0.0.0.0:8080/"
+            verifier(JWT
+                .require(Algorithm.HMAC256("M;O?:/rl=N<~O.Zg)/o,&^{M9TvSP{cK>s^@nB6)-obzoVzv14rnM?]]Qc>`^T!"))
+                .withIssuer("http://0.0.0.0:8080/")
+                .build())
+        }
+    }
 
     routing {
         post("/login") {
-            val requiredKeys = listOf("login", "password")
-            val query = call.receive<HashMap<String, String>>()
+            val token = JWT.create()
+//                .withAudience(audience)
+                .withIssuer("http://0.0.0.0:8080/")
+                .withClaim("username", "admin")
+                .withExpiresAt(Date(System.currentTimeMillis() + 60000))
+                .sign(Algorithm.HMAC256("M;O?:/rl=N<~O.Zg)/o,&^{M9TvSP{cK>s^@nB6)-obzoVzv14rnM?]]Qc>`^T!"))
 
-            if (!query.keys.containsAll(requiredKeys)) {
-                return@post call.respond(HttpStatusCode.BadRequest)
-            }
-
-            if (!hasUser(query["login"]!!, query["password"]!!)) {
-                return@post call.respond(HttpStatusCode.NotFound)
-            }
-            call.respond(HttpStatusCode.Accepted)
+            call.respond(token)
+//            val requiredKeys = listOf("login", "password")
+//            val query = call.receive<HashMap<String, String>>()
+//
+//            if (!query.keys.containsAll(requiredKeys)) {
+//                return@post call.respond(HttpStatusCode.BadRequest)
+//            }
+//
+//            if (!hasUser(query["login"]!!, query["password"]!!)) {
+//                return@post call.respond(HttpStatusCode.NotFound)
+//            }
+//            call.respond(HttpStatusCode.Accepted)
         }
 
         post("/register") {
