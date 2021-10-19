@@ -11,6 +11,7 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom")) // указывает другим зависимостям под какую версию котлина всё устанавливать
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")   // стандартная библиотека kotlin
+    implementation("io.github.classgraph:classgraph:4.8.128")
     implementation("com.google.guava:guava:29.0-jre")           // дополнительная библиотека для проекта
 
     implementation("io.ktor:ktor-server-core:1.6.3")
@@ -27,6 +28,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.34.1")
 
     implementation("org.xerial:sqlite-jdbc:3.30.1")
+    implementation("org.valiktor:valiktor-core:0.12.0")
 }
 tasks{
     shadowJar {
