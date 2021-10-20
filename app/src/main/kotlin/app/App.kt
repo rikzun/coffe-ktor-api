@@ -1,17 +1,13 @@
-package kt
+package app
 
-import io.github.classgraph.*
 import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.routing.*
 import io.ktor.features.*
 import io.ktor.gson.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
-import io.ktor.http.content.*
-import io.ktor.request.*
+import io.ktor.routing.*
+import io.ktor.routing.Route
 import io.ktor.server.netty.*
-import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -19,13 +15,9 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.lang.reflect.AccessibleObject
 import java.sql.Connection
-import kt.Routes.*
-import kt.Routes.Route
-import kotlin.reflect.full.*
-import kotlin.reflect.jvm.jvmName
-import kotlin.reflect.jvm.kotlinFunction
-import kotlin.reflect.jvm.reflect
+import kotlin.reflect.full.callSuspend
 
 object UserTable : IntIdTable() {
     val login    = varchar("login", 255)
@@ -38,46 +30,50 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id), Principal {
     var password by UserTable.password
 }
 
-annotation class Kekw
 
-data class CL(
-    val path: String,
-    val fn: Any
-)
+fun main(args: Array<String>) = EngineMain.main(args)
+fun Application.module() {
 
-fun main(args: Array<String>) {
-    val annotation = Kekw::class.java
-    val annotationName = annotation.canonicalName
+    // database init
+    TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
+    Database.connect("jdbc:sqlite:app/src/main/resources/data.db", "org.sqlite.JDBC")
+    transaction { SchemaUtils.create(UserTable) }
 
-    val a = ClassGraph()
-        .enableAllInfo()
-        .scan().use {
-            it.getClassesWithMethodAnnotation(annotationName).map {
-                CL(it.name, it.methodInfo.filter { it.hasAnnotation(annotation) })
+    Config.init(environment.config)
+
+    install(ContentNegotiation) { gson() }
+    install(Authentication) {
+        jwt("auth-jwt") {
+            verifier { JwtUtils.verify() }
+            validate { JwtUtils.validate(it) }
+        }
+    }
+
+    routing {
+        for (route in Core.getRoutes()) {
+            val fn = suspend {
+                route.fn.callSuspend()
+            }
+
+            val routeFn = {
+                when (route.method) {
+                    Method.GET -> get(route.path) { fn() }
+                    Method.POST -> post(route.path) { fn() }
+                    Method.DELETE -> delete(route.path) { fn() }
+                }
+            }
+
+            if (route.auth) {
+                authenticate {
+                    routeFn.run {  }
+                }
+            } else {
+                routeFn.run {}
             }
         }
+    }
 
-    println(a)
-}
-//fun main(args: Array<String>) = EngineMain.main(args)
-//fun Application.module(testing: Boolean = false) {
-//    // database init
-//    TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-//    Database.connect("jdbc:sqlite:app/src/main/resources/data.db", "org.sqlite.JDBC")
-//    transaction { SchemaUtils.create(UserTable) }
-//
-//    Config.init(environment.config)
-//
-//    install(ContentNegotiation) { gson() }
-//    install(Authentication) {
-//        jwt("auth-jwt") {
-//            verifier { JwtUtils.verify() }
-//            validate { JwtUtils.validate(it) }
-//        }
-//    }
-//
-//    println(Core.getRoutes())
-//
+
 //    routing {
 //        authenticate("auth-jwt") {
 //            for (route in Core.getAuthRoutes()) when (route.method) {
@@ -93,4 +89,4 @@ fun main(args: Array<String>) {
 //            Method.DELETE -> delete(route.path) { route.run(call) }
 //        }
 //    }
-//}
+}
