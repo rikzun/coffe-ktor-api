@@ -29,6 +29,7 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.30.1")
     implementation("org.valiktor:valiktor-core:0.12.0")
+    implementation("org.junit.jupiter:junit-jupiter:5.7.0")
 }
 tasks{
     shadowJar {
