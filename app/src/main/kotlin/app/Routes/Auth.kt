@@ -1,11 +1,8 @@
 package app.Routes
 
-import app.Core
-import app.JwtUtils
-import app.Method
+import app.*
 import app.Models.UserEntity
 import app.Models.UserTable
-import app.Route
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.request.*
@@ -26,17 +23,10 @@ data class LoginData (
 
 @Route(Method.POST, "/auth/{data}/login", auth = false)
 suspend fun loginController(call: ApplicationCall) {
-    val params = call.receiveOrNull<LoginData>()
-        ?: return call.respond(HttpStatusCode.BadRequest)
-
-    try {
-        validate(params) {
-            validate(LoginData::login).isNotEmpty().isNotBlank().isNotNull()
-            validate(LoginData::password).isNotEmpty().isNotBlank().isNotNull()
-        }
-    } catch(e: ConstraintViolationException) {
-        return call.respond(HttpStatusCode.BadRequest, Core.handleValidateError(e))
-    }
+    val params = call.receiveAndValid<LoginData> {
+        validate(LoginData::login).isNotEmpty().isNotBlank().isNotNull()
+        validate(LoginData::password).isNotEmpty().isNotBlank().isNotNull()
+    } ?: return
 
     call.respond(transaction {
         val users = UserEntity.find {

@@ -3,7 +3,11 @@ package app
 import io.github.classgraph.ClassGraph
 import io.ktor.application.*
 import io.ktor.http.*
+import io.ktor.request.*
+import io.ktor.response.*
 import org.valiktor.ConstraintViolationException
+import org.valiktor.Validator
+import org.valiktor.validate
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.kotlinFunction
@@ -61,4 +65,18 @@ class Core {
             }
             .joinToString("\n")
     }
+}
+
+suspend inline fun <reified T: Any>ApplicationCall.receiveAndValid(block: Validator<T>.(T) -> Unit): T? {
+    val params = this.receiveOrNull<T>()
+        ?: return null
+
+    try {
+        validate(params) { block(it) }
+    } catch(e: ConstraintViolationException) {
+        this.respond(HttpStatusCode.BadRequest, Core.handleValidateError(e))
+        return null
+    }
+
+    return params
 }
