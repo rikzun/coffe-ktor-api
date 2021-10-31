@@ -5,7 +5,7 @@
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\workspace\coffe-ktor-api\app\src\main\resources\data.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:D:\Workspace\kotlin\app\src\main\resources\data.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

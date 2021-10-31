@@ -1,5 +1,6 @@
 package app
 
+import app.Models.LocationTable
 import app.Models.UserTable
 import io.ktor.application.*
 import io.ktor.features.*
@@ -20,7 +21,10 @@ fun Application.module() {
     // database init
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     Database.connect("jdbc:sqlite:app/src/main/resources/data.db", "org.sqlite.JDBC")
-    transaction { SchemaUtils.create(UserTable) }
+    transaction {
+        SchemaUtils.create(UserTable)
+        SchemaUtils.create(LocationTable)
+    }
 
     Config.init(environment.config)
 

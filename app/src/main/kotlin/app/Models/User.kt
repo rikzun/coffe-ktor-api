@@ -6,9 +6,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object UserTable : IntIdTable() {
-    val login    = varchar("login", 255)
-    val password = varchar("password", 255)
+object UserTable : IntIdTable("users") {
+    val login    = text("login")
+    val password = text("password")
 }
 
 class UserEntity(id: EntityID<Int>) : IntEntity(id), Principal {

@@ -21,8 +21,13 @@ data class LoginData (
     val password: String
 )
 
-@Route(Method.POST, "/auth/{data}/login", auth = false)
-suspend fun loginController(call: ApplicationCall) {
+data class AuthResponse(
+    val token: String,
+    val tokenLifetime: Int
+)
+
+@Route(Method.POST, "/auth/login", auth = false)
+suspend fun authLogin(call: ApplicationCall) {
     val params = call.receiveAndValid<LoginData> {
         validate(LoginData::login).isNotEmpty().isNotBlank().isNotNull()
         validate(LoginData::password).isNotEmpty().isNotBlank().isNotNull()
@@ -32,30 +37,36 @@ suspend fun loginController(call: ApplicationCall) {
         val users = UserEntity.find {
             UserTable.login eq params.login and (
                 UserTable.password eq params.password
-                )
+            )
         }
         if (users.empty()) return@transaction HttpStatusCode.NotFound
-        return@transaction JwtUtils.create(users.first().id.value)
+
+        return@transaction AuthResponse(
+            JwtUtils.create(users.first().id.value),
+            Config.lifetime
+        )
     })
 }
 
-//object AuthReg : Route {
-//    override val method = Method.POST
-//    override val path = "/auth/register"
-//
-//    override suspend fun run(call: ApplicationCall): Any {
-//        val params = call.receiveOrNull<LoginData>() ?: return HttpStatusCode.BadRequest
-//
-//        return transaction {
-//            val users = UserEntity.find { UserTable.login eq params.login }
-//            if (!users.empty()) return@transaction HttpStatusCode.NotAcceptable
-//
-//            val user = UserEntity.new {
-//                login = params.login
-//                password = params.password
-//            }
-//
-//            return@transaction JwtUtils.create(user.id.value)
-//        }
-//    }
-//}
+@Route(Method.POST, "/auth/register", auth = false)
+suspend fun authRegister(call: ApplicationCall) {
+    val params = call.receiveAndValid<LoginData> {
+        validate(LoginData::login).isNotEmpty().isNotBlank().isNotNull()
+        validate(LoginData::password).isNotEmpty().isNotBlank().isNotNull()
+    } ?: return
+
+    call.respond(transaction {
+        val users = UserEntity.find { UserTable.login eq params.login }
+        if (!users.empty()) return@transaction HttpStatusCode.NotAcceptable
+
+        val user = UserEntity.new {
+            login = params.login
+            password = params.password
+        }
+
+        return@transaction AuthResponse(
+            JwtUtils.create(user.id.value),
+            Config.lifetime
+        )
+    })
+}

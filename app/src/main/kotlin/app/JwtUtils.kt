@@ -10,13 +10,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 object JwtUtils {
-
     fun create(id: Int): String = JWT.create()
         .withClaim("id", id)
         .withIssuer(Config.issuer)
         .withAudience(Config.audience)
         .withSubject(Config.subject)
-        .withExpiresAt(Date(System.currentTimeMillis() + 6000000))
+        .withExpiresAt(Date(System.currentTimeMillis() + 3600000))
         .sign(Algorithm.HMAC256(Config.secret))
 
     fun verify(): JWTVerifier? = JWT
