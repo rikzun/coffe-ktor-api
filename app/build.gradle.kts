@@ -34,7 +34,7 @@ dependencies {
 tasks{
     shadowJar {
         manifest {
-            attributes(Pair("Main-Class", "kt.AppKt"))
+            attributes(Pair("Main-Class", "app.AppKt"))
         }
     }
 }

@@ -5,16 +5,12 @@ import app.Models.UserEntity
 import app.Models.UserTable
 import io.ktor.application.*
 import io.ktor.http.*
-import io.ktor.request.*
 import io.ktor.response.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.valiktor.ConstraintViolationException
 import org.valiktor.functions.isNotBlank
 import org.valiktor.functions.isNotEmpty
 import org.valiktor.functions.isNotNull
-import org.valiktor.validate
-import kotlin.reflect.full.declaredMemberProperties
 
 data class LoginData (
     val login: String,

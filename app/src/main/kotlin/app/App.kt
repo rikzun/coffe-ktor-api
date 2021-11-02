@@ -1,5 +1,6 @@
 package app
 
+import app.Models.LocationMenuTable
 import app.Models.LocationTable
 import app.Models.UserTable
 import io.ktor.application.*
@@ -24,6 +25,7 @@ fun Application.module() {
     transaction {
         SchemaUtils.create(UserTable)
         SchemaUtils.create(LocationTable)
+        SchemaUtils.create(LocationMenuTable)
     }
 
     Config.init(environment.config)
@@ -40,7 +42,7 @@ fun Application.module() {
         authenticate("auth-jwt") {
             for (route in Core.getRoutes(auth = true)) {
                 route(route.path, Core.convertMethod(route.method)) {
-                    handle { route.fn.callSuspend(call) }
+                    handle { route.fn.callSuspend(call, call.principal()!!) }
                 }
             }
         }

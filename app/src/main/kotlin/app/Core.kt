@@ -68,8 +68,12 @@ class Core {
 }
 
 suspend inline fun <reified T: Any>ApplicationCall.receiveAndValid(block: Validator<T>.(T) -> Unit): T? {
-    val params = this.receiveOrNull<T>()
-        ?: return null
+    val params: T?
+    try {
+        params = this.receiveOrNull<T>() ?: return null
+    } catch(e: Error) {
+        return null
+    }
 
     try {
         validate(params) { block(it) }
